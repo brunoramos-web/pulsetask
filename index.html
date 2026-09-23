@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PulseTask | Enterprise Suite v3.0 Pro</title>
+  <title>PulseTask | Enterprise Suite v3.1 Live Timer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -67,7 +67,7 @@
         <div>
           <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             PulseTask 
-            <span class="text-[10px] bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2.5 py-0.5 rounded-full font-semibold">v3.0 Pro</span>
+            <span class="text-[10px] bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2.5 py-0.5 rounded-full font-semibold">v3.1 Live Timer</span>
           </h1>
           <p class="text-xs text-slate-400">Plataforma de Gestão de Jornada & Demandas</p>
         </div>
@@ -91,16 +91,26 @@
       </div>
     </header>
 
-    <!-- VIEW 1: CALENDÁRIO -->
+    <!-- VIEW 1: CALENDÁRIO & JORNADA -->
     <div id="view-calendar" class="space-y-6">
       <div class="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         <div class="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
-          <div>
-            <div class="flex items-center space-x-3 mb-1">
-              <span id="selected-date-display" class="text-xl font-bold text-slate-100">Carregando...</span>
-              <span id="shift-badge" class="text-xs px-3 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700/80">Não Iniciado</span>
+          <div class="flex items-center space-x-6">
+            <div>
+              <div class="flex items-center space-x-3 mb-1">
+                <span id="selected-date-display" class="text-xl font-bold text-slate-100">Carregando...</span>
+                <span id="shift-badge" class="text-xs px-3 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700/80">Não Iniciado</span>
+              </div>
+              <p class="text-xs text-slate-400">Controle de jornada com cronômetro dinâmico em tempo real.</p>
             </div>
-            <p class="text-xs text-slate-400">Controle de jornada integrado com rastreamento automático de demandas.</p>
+
+            <div id="live-shift-container" class="hidden border-l border-slate-800 pl-6">
+              <span class="text-[10px] text-slate-400 font-medium block uppercase tracking-wider mb-0.5">Tempo em Jornada</span>
+              <div id="live-shift-timer" class="text-2xl font-mono font-bold text-emerald-400 flex items-center gap-2">
+                <i data-lucide="timer" class="w-5 h-5 text-emerald-400 animate-pulse"></i>
+                <span>00:00:00</span>
+              </div>
+            </div>
           </div>
 
           <div class="flex flex-wrap items-center gap-3">
@@ -193,7 +203,7 @@
         <div class="glass-panel rounded-3xl p-5 flex flex-col min-h-[500px]">
           <div class="pb-3 mb-4 border-b border-slate-800 flex justify-between items-center">
             <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
               <h3 class="font-bold text-sm text-slate-200">Em Progresso</h3>
             </div>
             <span id="count-in-progress" class="text-xs bg-slate-900/80 px-3 py-1 rounded-full text-slate-400 font-mono border border-slate-800">0</span>
@@ -238,6 +248,7 @@
   </div>
 
   <script>
+    // Usa prioritariamente a chave v3 anterior para garantir retrocompatibilidade total dos dados criados
     const STORAGE_KEY_TASKS = 'pulsetask_tasks_v3';
     const STORAGE_KEY_LOGS = 'pulsetask_logs_v3';
 
@@ -255,28 +266,29 @@
       return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
 
+    function formatSecondsToHMS(secs) {
+      if (!secs || isNaN(secs) || secs < 0) return "00:00:00";
+      const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+      const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0');
+      const s = Math.floor(secs % 60).toString().padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    // Carregamento Inteligente: Tenta v31, se não achar, carrega v3 ou fallback inicial
     function loadStorage(key, fallback) {
       try {
-        const item = localStorage.getItem(key);
+        const item = localStorage.getItem(key) || localStorage.getItem(key.replace('_v3', '_v31'));
         return item ? JSON.parse(item) : fallback;
       } catch (e) { return fallback; }
     }
 
     function saveStorage(key, value) {
-      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+      try { 
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {}
     }
 
-    let tasks = loadStorage(STORAGE_KEY_TASKS, [
-      { 
-        id: '1', title: 'Refatoração da Arquitetura do Piloto', status: 'done', priority: 'high', 
-        stageTimestamps: { todo: '08:30', 'in-progress': '09:00', done: '10:15' }
-      },
-      { 
-        id: '2', title: 'Ajuste de Hierarquia e Transições UI', status: 'in-progress', priority: 'high', 
-        stageTimestamps: { todo: '09:00', 'in-progress': '10:20' }
-      }
-    ]);
-
+    let tasks = loadStorage(STORAGE_KEY_TASKS, []);
     let logs = loadStorage(STORAGE_KEY_LOGS, {});
 
     function saveAll() {
@@ -306,26 +318,36 @@
 
     function addLogEntry(label) {
       if (!logs[selectedDateStr]) {
-        logs[selectedDateStr] = { status: 'idle', events: [] };
+        logs[selectedDateStr] = { status: 'idle', events: [], activeWorkedSeconds: 0 };
       }
       const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       logs[selectedDateStr].events.push({ time: nowTime, label: label });
     }
 
     function handleShiftAction(action) {
-      if (!logs[selectedDateStr]) logs[selectedDateStr] = { status: 'idle', events: [] };
+      if (!logs[selectedDateStr]) logs[selectedDateStr] = { status: 'idle', events: [], activeWorkedSeconds: 0 };
       const dayLog = logs[selectedDateStr];
 
       if (action === 'start') {
         dayLog.status = 'working';
+        dayLog.lastStartEpoch = Date.now();
         addLogEntry('Início da Jornada de Trabalho');
       } else if (action === 'pause') {
+        if (dayLog.lastStartEpoch) {
+          dayLog.activeWorkedSeconds = (dayLog.activeWorkedSeconds || 0) + Math.floor((Date.now() - dayLog.lastStartEpoch) / 1000);
+          dayLog.lastStartEpoch = null;
+        }
         dayLog.status = 'paused';
         addLogEntry('Pausa / Horário de Almoço');
       } else if (action === 'resume') {
         dayLog.status = 'working';
+        dayLog.lastStartEpoch = Date.now();
         addLogEntry('Retorno da Pausa');
       } else if (action === 'end') {
+        if (dayLog.lastStartEpoch) {
+          dayLog.activeWorkedSeconds = (dayLog.activeWorkedSeconds || 0) + Math.floor((Date.now() - dayLog.lastStartEpoch) / 1000);
+          dayLog.lastStartEpoch = null;
+        }
         dayLog.status = 'ended';
         addLogEntry('Encerramento do Dia');
         openSummaryModal();
@@ -334,12 +356,13 @@
     }
 
     function renderShiftControls() {
-      const dayLog = logs[selectedDateStr] || { status: 'idle', events: [] };
+      const dayLog = logs[selectedDateStr] || { status: 'idle', events: [], activeWorkedSeconds: 0 };
       const btnStart = document.getElementById('btn-start-day');
       const btnPause = document.getElementById('btn-pause-day');
       const btnResume = document.getElementById('btn-resume-day');
       const btnEnd = document.getElementById('btn-end-day');
       const badge = document.getElementById('shift-badge');
+      const liveContainer = document.getElementById('live-shift-container');
 
       btnStart.classList.add('hidden');
       btnPause.classList.add('hidden');
@@ -350,19 +373,23 @@
         btnStart.classList.remove('hidden');
         badge.innerText = 'Dia Não Iniciado';
         badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700/80';
+        liveContainer.classList.add('hidden');
       } else if (dayLog.status === 'working') {
         btnPause.classList.remove('hidden');
         btnEnd.classList.remove('hidden');
         badge.innerText = 'Em Expansão / Trabalhando';
         badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+        liveContainer.classList.remove('hidden');
       } else if (dayLog.status === 'paused') {
         btnResume.classList.remove('hidden');
         btnEnd.classList.remove('hidden');
         badge.innerText = 'Em Pausa (Almoço)';
         badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20';
+        liveContainer.classList.remove('hidden');
       } else if (dayLog.status === 'ended') {
         badge.innerText = 'Jornada Encerrada';
         badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20';
+        liveContainer.classList.remove('hidden');
       }
 
       const timelineEl = document.getElementById('daily-log-timeline');
@@ -386,6 +413,17 @@
       
       if (!task.stageTimestamps) task.stageTimestamps = {};
       task.stageTimestamps[newStatus] = nowTime;
+
+      if (task.status === 'in-progress' && task.inProgressStartEpoch) {
+        const delta = Math.floor((Date.now() - task.inProgressStartEpoch) / 1000);
+        task.timeInSeconds = (task.timeInSeconds || 0) + delta;
+        task.inProgressStartEpoch = null;
+      }
+
+      if (newStatus === 'in-progress') {
+        task.inProgressStartEpoch = Date.now();
+      }
+
       task.status = newStatus;
 
       const labels = {
@@ -412,7 +450,8 @@
         title: title,
         status: 'todo',
         priority: priority,
-        stageTimestamps: { todo: nowTime }
+        stageTimestamps: { todo: nowTime },
+        timeInSeconds: 0
       });
 
       addLogEntry(`Criada Nova Demanda: "${title}" (${priority.toUpperCase()})`);
@@ -460,7 +499,14 @@
 
             <h4 class="font-semibold text-sm text-slate-100 mb-3 leading-snug">${escapeHTML(task.title)}</h4>
 
-            <div class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 mb-3 space-y-1 font-mono">
+            <div class="mb-3 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+              <span class="text-[10px] text-slate-400 font-medium">Tempo Acumulado:</span>
+              <span id="card-timer-${task.id}" class="text-xs font-mono font-bold ${task.status === 'in-progress' ? 'text-indigo-400' : 'text-slate-300'}">
+                ${formatSecondsToHMS(task.timeInSeconds || 0)}
+              </span>
+            </div>
+
+            <div class="text-[11px] text-slate-400 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60 mb-3 space-y-1 font-mono">
               ${ts.todo ? `<div class="flex justify-between"><span>A Fazer:</span><span class="text-slate-300">${ts.todo}</span></div>` : ''}
               ${ts['in-progress'] ? `<div class="flex justify-between"><span>Em Progresso:</span><span class="text-indigo-400">${ts['in-progress']}</span></div>` : ''}
               ${ts.done ? `<div class="flex justify-between"><span>Concluído:</span><span class="text-emerald-400">${ts.done}</span></div>` : ''}
@@ -546,10 +592,16 @@
     function openSummaryModal() {
       const modal = document.getElementById('summary-modal');
       const content = document.getElementById('summary-content');
-      const dayLog = logs[selectedDateStr] || { events: [] };
+      const dayLog = logs[selectedDateStr] || { events: [], activeWorkedSeconds: 0 };
+
+      let totalSecs = dayLog.activeWorkedSeconds || 0;
+      if (dayLog.status === 'working' && dayLog.lastStartEpoch) {
+        totalSecs += Math.floor((Date.now() - dayLog.lastStartEpoch) / 1000);
+      }
 
       let summaryText = `=================================================\n`;
       summaryText += ` RESUMO EXECUTIVO DE JORNADA - ${selectedDateStr}\n`;
+      summaryText += ` TEMPO TOTAL DE JORNADA ATIVA: ${formatSecondsToHMS(totalSecs)}\n`;
       summaryText += `=================================================\n\n`;
 
       summaryText += `MARCOS DO PONTO / TIMELINE:\n`;
@@ -560,8 +612,13 @@
       summaryText += `\nDEMANDAS & ROTINAS EXECUTADAS:\n`;
       tasks.forEach(t => {
         const ts = t.stageTimestamps || {};
+        let cardSecs = t.timeInSeconds || 0;
+        if (t.status === 'in-progress' && t.inProgressStartEpoch) {
+          cardSecs += Math.floor((Date.now() - t.inProgressStartEpoch) / 1000);
+        }
+
         summaryText += ` • ${t.title} [${t.priority.toUpperCase()}]\n`;
-        summaryText += `   Status: ${t.status.toUpperCase()}\n`;
+        summaryText += `   Status: ${t.status.toUpperCase()} | Tempo Ativo: ${formatSecondsToHMS(cardSecs)}\n`;
         if (ts.todo) summaryText += `   - Criado em: ${ts.todo}\n`;
         if (ts['in-progress']) summaryText += `   - Iniciado em: ${ts['in-progress']}\n`;
         if (ts.done) summaryText += `   - Concluído em: ${ts.done}\n`;
@@ -586,9 +643,25 @@
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ tasks, logs }, null, 2));
       const anchor = document.createElement('a');
       anchor.setAttribute("href", dataStr);
-      anchor.setAttribute("download", `pulsetask_v3_${selectedDateStr}.json`);
+      anchor.setAttribute("download", `pulsetask_v31_${selectedDateStr}.json`);
       anchor.click();
     }
+
+    // Ticker ativo em tempo real
+    setInterval(() => {
+      const dayLog = logs[selectedDateStr];
+      if (dayLog && dayLog.status === 'working' && dayLog.lastStartEpoch) {
+        const currentTotal = (dayLog.activeWorkedSeconds || 0) + Math.floor((Date.now() - dayLog.lastStartEpoch) / 1000);
+        const timerEl = document.querySelector('#live-shift-timer span');
+        if (timerEl) timerEl.innerText = formatSecondsToHMS(currentTotal);
+      }
+
+      tasks.filter(t => t.status === 'in-progress' && t.inProgressStartEpoch).forEach(t => {
+        const currentCardSecs = (t.timeInSeconds || 0) + Math.floor((Date.now() - t.inProgressStartEpoch) / 1000);
+        const cardTimerEl = document.getElementById(`card-timer-${t.id}`);
+        if (cardTimerEl) cardTimerEl.innerText = formatSecondsToHMS(currentCardSecs);
+      });
+    }, 1000);
 
     function render() {
       renderCalendar();
@@ -597,7 +670,6 @@
       if (window.lucide) window.lucide.createIcons();
     }
 
-    // Inicialização direta
     render();
   </script>
 </body>
