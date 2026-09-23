@@ -1,83 +1,122 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PulseTask | Enterprise Time & Task Manager</title>
-  <!-- Tailwind CSS -->
+  <title>PulseTask | Enterprise Suite v3.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#f5f3ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 900: '#312e81' }
+          },
+          animation: {
+            'glow-pulse': 'glow 3s infinite ease-in-out',
+            'card-enter': 'enter 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          },
+          keyframes: {
+            glow: {
+              '0%, 100%': { opacity: '0.4', filter: 'blur(20px)' },
+              '50%': { opacity: '0.8', filter: 'blur(30px)' }
+            },
+            enter: {
+              '0%': { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
+              '100%': { opacity: '1', transform: 'translateY(0) scale(1)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      background: rgba(30, 41, 59, 0.8);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen selection:bg-indigo-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+  
+  <div class="fixed top-0 left-1/4 w-96 h-96 bg-brand-600/20 rounded-full animate-glow-pulse pointer-events-none -z-10"></div>
+  <div class="fixed bottom-0 right-1/4 w-96 h-96 bg-indigo-900/20 rounded-full animate-glow-pulse pointer-events-none -z-10" style="animation-delay: 1.5s;"></div>
+
   <div class="max-w-7xl mx-auto px-4 py-6">
-    
-    <!-- Header -->
-    <header class="flex flex-col md:flex-row justify-between items-center pb-6 mb-6 border-b border-slate-800 gap-4">
-      <div class="flex items-center space-x-3">
-        <div class="p-2.5 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl shadow-lg shadow-indigo-500/20">
-          <i data-lucide="clock" class="w-6 h-6 text-white"></i>
+    <header class="flex flex-col md:flex-row justify-between items-center pb-6 mb-8 border-b border-slate-800/80 gap-4">
+      <div class="flex items-center space-x-3.5">
+        <div class="p-3 bg-gradient-to-tr from-brand-600 via-indigo-500 to-violet-500 rounded-2xl shadow-lg shadow-brand-500/20">
+          <i data-lucide="zap" class="w-6 h-6 text-white"></i>
         </div>
         <div>
           <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
             PulseTask 
-            <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full font-semibold">v2.1 Audited</span>
+            <span class="text-[10px] bg-brand-500/10 text-brand-400 border border-brand-500/20 px-2.5 py-0.5 rounded-full font-semibold">v3.0 Pro</span>
           </h1>
-          <p class="text-xs text-slate-400">Plataforma Sênior de Gestão de Jornada e Demandas</p>
+          <p class="text-xs text-slate-400">Plataforma de Gestão de Jornada & Demandas</p>
         </div>
       </div>
 
-      <!-- Navigation & Actions -->
       <div class="flex items-center gap-3">
-        <div class="bg-slate-900/90 p-1 border border-slate-800 rounded-xl flex gap-1">
-          <button id="tab-calendar" onclick="switchView('calendar')" class="px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md">
+        <div class="bg-slate-900/80 p-1 border border-slate-800/80 rounded-2xl flex gap-1 shadow-inner">
+          <button id="tab-calendar" onclick="switchView('calendar')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-brand-600 text-white shadow-md shadow-brand-600/20">
             <i data-lucide="calendar" class="w-4 h-4"></i>
             <span>Calendário & Log</span>
           </button>
-          <button id="tab-kanban" onclick="switchView('kanban')" class="px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+          <button id="tab-kanban" onclick="switchView('kanban')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50">
             <i data-lucide="layout-grid" class="w-4 h-4"></i>
             <span>Quadro Kanban</span>
           </button>
         </div>
 
-        <button onclick="exportData()" title="Exportar Backup JSON" class="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 transition-colors">
+        <button onclick="exportData()" title="Exportar Backup JSON" class="p-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-300 transition-colors shadow-sm">
           <i data-lucide="download" class="w-4 h-4"></i>
         </button>
       </div>
     </header>
 
-    <!-- VIEW 1: CALENDÁRIO & JORNADA -->
+    <!-- VIEW 1: CALENDÁRIO -->
     <div id="view-calendar" class="space-y-6">
-      
-      <!-- Work Shift Control -->
-      <div class="glass-card border border-slate-800/80 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
         <div class="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
           <div>
             <div class="flex items-center space-x-3 mb-1">
               <span id="selected-date-display" class="text-xl font-bold text-slate-100">Carregando...</span>
-              <span id="shift-badge" class="text-xs px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700">Não Iniciado</span>
+              <span id="shift-badge" class="text-xs px-3 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700/80">Não Iniciado</span>
             </div>
-            <p class="text-xs text-slate-400">Registe os marcos da sua jornada diária e atrele o tempo investido em cada demanda.</p>
+            <p class="text-xs text-slate-400">Controle de jornada integrado com rastreamento automático de demandas.</p>
           </div>
 
-          <!-- Buttons -->
           <div class="flex flex-wrap items-center gap-3">
-            <button id="btn-start-day" onclick="handleShiftAction('start')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all">
+            <button id="btn-start-day" onclick="handleShiftAction('start')" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
               <i data-lucide="play-circle" class="w-4 h-4"></i>
               <span>Iniciar Dia</span>
             </button>
-            <button id="btn-pause-day" onclick="handleShiftAction('pause')" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-amber-600/20 transition-all hidden">
+            <button id="btn-pause-day" onclick="handleShiftAction('pause')" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-600/20 transition-all active:scale-95 hidden">
               <i data-lucide="coffee" class="w-4 h-4"></i>
               <span>Pausa / Almoço</span>
             </button>
-            <button id="btn-resume-day" onclick="handleShiftAction('resume')" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all hidden">
+            <button id="btn-resume-day" onclick="handleShiftAction('resume')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95 hidden">
               <i data-lucide="play" class="w-4 h-4"></i>
               <span>Retornar ao Trabalho</span>
             </button>
-            <button id="btn-end-day" onclick="handleShiftAction('end')" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg shadow-rose-600/20 transition-all hidden">
+            <button id="btn-end-day" onclick="handleShiftAction('end')" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-rose-600/20 transition-all active:scale-95 hidden">
               <i data-lucide="stop-circle" class="w-4 h-4"></i>
               <span>Encerrar Dia & Gerar Resumo</span>
             </button>
@@ -85,34 +124,33 @@
         </div>
       </div>
 
-      <!-- Calendar + Log -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 glass-card border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="lg:col-span-2 glass-panel rounded-3xl p-6 shadow-xl">
           <div class="flex justify-between items-center mb-6">
             <h2 id="calendar-month-year" class="font-bold text-lg text-slate-200">Mês / Ano</h2>
             <div class="flex space-x-2">
-              <button onclick="changeMonth(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-              <button onclick="changeMonth(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-colors"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+              <button onclick="changeMonth(-1)" class="p-2 bg-slate-900/80 hover:bg-slate-800 rounded-xl text-slate-300 transition-colors border border-slate-800"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+              <button onclick="changeMonth(1)" class="p-2 bg-slate-900/80 hover:bg-slate-800 rounded-xl text-slate-300 transition-colors border border-slate-800"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
             </div>
           </div>
-          <div class="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-semibold text-slate-500">
+          <div class="grid grid-cols-7 gap-2 mb-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">
             <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
           </div>
           <div id="calendar-days-grid" class="grid grid-cols-7 gap-2"></div>
         </div>
 
-        <div class="glass-card border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+        <div class="glass-panel rounded-3xl p-6 shadow-xl flex flex-col justify-between">
           <div>
             <h3 class="font-bold text-sm text-slate-200 mb-4 flex items-center gap-2">
-              <i data-lucide="list-checks" class="w-4 h-4 text-indigo-400"></i>
+              <i data-lucide="activity" class="w-4 h-4 text-brand-400"></i>
               <span>Log de Atividades do Dia</span>
             </h3>
-            <div id="daily-log-timeline" class="space-y-4 max-h-[320px] overflow-y-auto pr-2"></div>
+            <div id="daily-log-timeline" class="space-y-3 max-h-[340px] overflow-y-auto pr-2"></div>
           </div>
           <div class="pt-4 border-t border-slate-800/80 mt-4">
-            <button onclick="switchView('kanban')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-colors">
-              <i data-lucide="plus" class="w-4 h-4"></i>
-              <span>Ir para Demandas e Foco</span>
+            <button onclick="switchView('kanban')" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-2xl text-xs font-semibold flex items-center justify-center gap-2 transition-all border border-slate-800">
+              <i data-lucide="layout-grid" class="w-4 h-4 text-brand-400"></i>
+              <span>Ver Quadro Kanban</span>
             </button>
           </div>
         </div>
@@ -121,398 +159,84 @@
 
     <!-- VIEW 2: KANBAN -->
     <div id="view-kanban" class="space-y-6 hidden">
-      <form onsubmit="handleAddTask(event)" class="glass-card border border-slate-800 p-4 rounded-2xl flex flex-wrap gap-4 items-end">
+      <form onsubmit="handleAddTask(event)" class="glass-panel p-5 rounded-3xl flex flex-wrap gap-4 items-end shadow-xl">
         <div class="flex-1 min-w-[240px]">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Nova Demanda</label>
-          <input id="input-title" type="text" placeholder="Ex: Criar rotas de autenticação..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Nova Demanda / Rotina</label>
+          <input id="input-title" type="text" placeholder="Ex: Ajustar rotas do backend..." required class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-500 transition-colors" />
         </div>
-        <div class="w-full sm:w-36">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Prioridade</label>
-          <select id="input-priority" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500">
-            <option value="low">Baixa</option>
-            <option value="medium" selected>Média</option>
-            <option value="high">Alta</option>
+        <div class="w-full sm:w-40">
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Prioridade (Hierarquia)</label>
+          <select id="input-priority" class="w-full bg-slate-900/90 border border-slate-800 rounded-2xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-500 transition-colors">
+            <option value="high">🔴 Alta</option>
+            <option value="medium" selected>🟡 Média</option>
+            <option value="low">🔵 Baixa</option>
           </select>
         </div>
-        <div class="w-full sm:w-32">
-          <label class="block text-xs font-medium text-slate-400 mb-1">Est. Horas</label>
-          <input id="input-est" type="number" step="0.5" value="1" min="0.5" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500" />
-        </div>
-        <button type="submit" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2 rounded-xl text-sm flex items-center justify-center space-x-2 transition-colors">
+        <button type="submit" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white font-bold px-6 py-2.5 rounded-2xl text-sm flex items-center justify-center space-x-2 transition-all shadow-lg shadow-brand-600/20 active:scale-95">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span>Adicionar</span>
         </button>
       </form>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="glass-card border border-slate-800 rounded-2xl p-4 flex flex-col min-h-[450px]">
-          <div class="pb-3 mb-4 border-b-2 border-amber-500/50 flex justify-between items-center">
-            <h3 class="font-semibold text-sm text-slate-300">A Fazer</h3>
-            <span id="count-todo" class="text-xs bg-slate-900 px-2.5 py-0.5 rounded-full text-slate-400 border border-slate-800">0</span>
+        <div class="glass-panel rounded-3xl p-5 flex flex-col min-h-[500px]">
+          <div class="pb-3 mb-4 border-b border-slate-800 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <h3 class="font-bold text-sm text-slate-200">A Fazer</h3>
+            </div>
+            <span id="count-todo" class="text-xs bg-slate-900/80 px-3 py-1 rounded-full text-slate-400 font-mono border border-slate-800">0</span>
           </div>
-          <div id="col-todo" class="space-y-3 flex-1"></div>
+          <div id="col-todo" class="space-y-3.5 flex-1"></div>
         </div>
 
-        <div class="glass-card border border-slate-800 rounded-2xl p-4 flex flex-col min-h-[450px]">
-          <div class="pb-3 mb-4 border-b-2 border-blue-500/50 flex justify-between items-center">
-            <h3 class="font-semibold text-sm text-slate-300">Em Progresso</h3>
-            <span id="count-in-progress" class="text-xs bg-slate-900 px-2.5 py-0.5 rounded-full text-slate-400 border border-slate-800">0</span>
+        <div class="glass-panel rounded-3xl p-5 flex flex-col min-h-[500px]">
+          <div class="pb-3 mb-4 border-b border-slate-800 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+              <h3 class="font-bold text-sm text-slate-200">Em Progresso</h3>
+            </div>
+            <span id="count-in-progress" class="text-xs bg-slate-900/80 px-3 py-1 rounded-full text-slate-400 font-mono border border-slate-800">0</span>
           </div>
-          <div id="col-in-progress" class="space-y-3 flex-1"></div>
+          <div id="col-in-progress" class="space-y-3.5 flex-1"></div>
         </div>
 
-        <div class="glass-card border border-slate-800 rounded-2xl p-4 flex flex-col min-h-[450px]">
-          <div class="pb-3 mb-4 border-b-2 border-emerald-500/50 flex justify-between items-center">
-            <h3 class="font-semibold text-sm text-slate-300">Concluído</h3>
-            <span id="count-done" class="text-xs bg-slate-900 px-2.5 py-0.5 rounded-full text-slate-400 border border-slate-800">0</span>
+        <div class="glass-panel rounded-3xl p-5 flex flex-col min-h-[500px]">
+          <div class="pb-3 mb-4 border-b border-slate-800 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <h3 class="font-bold text-sm text-slate-200">Concluído</h3>
+            </div>
+            <span id="count-done" class="text-xs bg-slate-900/80 px-3 py-1 rounded-full text-slate-400 font-mono border border-slate-800">0</span>
           </div>
-          <div id="col-done" class="space-y-3 flex-1"></div>
+          <div id="col-done" class="space-y-3.5 flex-1"></div>
         </div>
       </div>
     </div>
 
-    <!-- MODAL -->
-    <div id="summary-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
-      <div class="glass-card border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2">
-            <i data-lucide="file-text" class="w-5 h-5 text-indigo-400"></i>
-            <span>Resumo Diário de Produtividade</span>
+    <!-- MODAL DE RESUMO -->
+    <div id="summary-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-4 z-50 hidden">
+      <div class="glass-panel border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 shadow-2xl relative animate-card-enter">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2.5">
+            <i data-lucide="file-spreadsheet" class="w-5 h-5 text-brand-400"></i>
+            <span>Resumo Diário Executivo</span>
           </h3>
-          <button onclick="closeModal()" class="text-slate-400 hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+          <button onclick="closeModal()" class="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800"><i data-lucide="x" class="w-5 h-5"></i></button>
         </div>
-        <div id="summary-content" class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-96 overflow-y-auto mb-4"></div>
+        <div id="summary-content" class="bg-slate-950/90 border border-slate-800/80 rounded-2xl p-4 text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-96 overflow-y-auto mb-5 leading-relaxed"></div>
         <div class="flex gap-3 justify-end">
-          <button onclick="copySummary()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-medium flex items-center gap-2 transition-colors">
+          <button onclick="copySummary()" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-lg shadow-brand-600/20">
             <i data-lucide="copy" class="w-4 h-4"></i>
             <span>Copiar Resumo</span>
           </button>
-          <button onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition-colors">Fechar</button>
+          <button onclick="closeModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-all">Fechar</button>
         </div>
       </div>
     </div>
 
   </div>
 
-  <script>
-    const STORAGE_KEY_TASKS = 'pulsetask_tasks_v2';
-    const STORAGE_KEY_LOGS = 'pulsetask_logs_v2';
-
-    let currentDate = new Date();
-    let selectedDateStr = formatDateKey(new Date());
-
-    // Fuso Horário Local Preciso (Ajustado)
-    function formatDateKey(d) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-
-    // Sanitização de Entrada Contra Vulnerabilidades XSS
-    function escapeHTML(str) {
-      return str.replace(/[&<>'"]/g, 
-        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-      );
-    }
-
-    // Carregamento Seguro
-    function loadStorage(key, fallback) {
-      try {
-        const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : fallback;
-      } catch (e) {
-        console.warn(`Aviso de segurança: LocalStorage bloqueado. Usando armazenamento em memória temporária.`, e);
-        return fallback;
-      }
-    }
-
-    function saveStorage(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch (e) {
-        console.warn(`Erro ao persistir em LocalStorage.`, e);
-      }
-    }
-
-    let tasks = loadStorage(STORAGE_KEY_TASKS, [
-      { id: '1', title: 'Mapeamento de Requisitos da API', status: 'done', priority: 'high', timeSpent: 3600, estimated: 7200 },
-      { id: '2', title: 'Desenvolvimento do Protótipo Pilot', status: 'in-progress', priority: 'high', timeSpent: 1800, estimated: 5400 }
-    ]);
-
-    let logs = loadStorage(STORAGE_KEY_LOGS, {});
-
-    function saveAll() {
-      saveStorage(STORAGE_KEY_TASKS, tasks);
-      saveStorage(STORAGE_KEY_LOGS, logs);
-      render();
-    }
-
-    function switchView(view) {
-      const calView = document.getElementById('view-calendar');
-      const kanView = document.getElementById('view-kanban');
-      const btnCal = document.getElementById('tab-calendar');
-      const btnKan = document.getElementById('tab-kanban');
-
-      if (view === 'calendar') {
-        calView.classList.remove('hidden');
-        kanView.classList.add('hidden');
-        btnCal.className = "px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md";
-        btnKan.className = "px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800";
-      } else {
-        calView.classList.add('hidden');
-        kanView.classList.remove('hidden');
-        btnKan.className = "px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 bg-indigo-600 text-white shadow-md";
-        btnCal.className = "px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800";
-      }
-    }
-
-    function handleShiftAction(action) {
-      if (!logs[selectedDateStr]) {
-        logs[selectedDateStr] = { status: 'idle', events: [] };
-      }
-
-      const dayLog = logs[selectedDateStr];
-      const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-      if (action === 'start') {
-        dayLog.status = 'working';
-        dayLog.events.push({ type: 'start', time: nowTime, label: 'Início da Jornada' });
-      } else if (action === 'pause') {
-        dayLog.status = 'paused';
-        dayLog.events.push({ type: 'pause', time: nowTime, label: 'Pausa / Almoço' });
-      } else if (action === 'resume') {
-        dayLog.status = 'working';
-        dayLog.events.push({ type: 'resume', time: nowTime, label: 'Retorno do Almoço' });
-      } else if (action === 'end') {
-        dayLog.status = 'ended';
-        dayLog.events.push({ type: 'end', time: nowTime, label: 'Encerramento do Dia' });
-        openSummaryModal();
-      }
-
-      saveAll();
-    }
-
-    function renderShiftControls() {
-      const dayLog = logs[selectedDateStr] || { status: 'idle', events: [] };
-      const btnStart = document.getElementById('btn-start-day');
-      const btnPause = document.getElementById('btn-pause-day');
-      const btnResume = document.getElementById('btn-resume-day');
-      const btnEnd = document.getElementById('btn-end-day');
-      const badge = document.getElementById('shift-badge');
-
-      btnStart.classList.add('hidden');
-      btnPause.classList.add('hidden');
-      btnResume.classList.add('hidden');
-      btnEnd.classList.add('hidden');
-
-      if (dayLog.status === 'idle') {
-        btnStart.classList.remove('hidden');
-        badge.innerText = 'Dia Não Iniciado';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700';
-      } else if (dayLog.status === 'working') {
-        btnPause.classList.remove('hidden');
-        btnEnd.classList.remove('hidden');
-        badge.innerText = 'Em Expansão / Trabalhando';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-      } else if (dayLog.status === 'paused') {
-        btnResume.classList.remove('hidden');
-        btnEnd.classList.remove('hidden');
-        badge.innerText = 'Em Pausa (Almoço)';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20';
-      } else if (dayLog.status === 'ended') {
-        badge.innerText = 'Jornada Encerrada';
-        badge.className = 'text-xs px-2.5 py-1 rounded-full font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
-      }
-
-      const timelineEl = document.getElementById('daily-log-timeline');
-      if (dayLog.events.length === 0) {
-        timelineEl.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">Nenhum evento registrado hoje.</p>`;
-      } else {
-        timelineEl.innerHTML = dayLog.events.map(ev => `
-          <div class="flex items-center space-x-3 text-xs">
-            <span class="font-mono text-slate-400 bg-slate-900 border border-slate-800 px-2 py-1 rounded-md">${ev.time}</span>
-            <span class="text-slate-200 font-medium">${escapeHTML(ev.label)}</span>
-          </div>
-        `).join('');
-      }
-    }
-
-    function renderCalendar() {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-
-      const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-      document.getElementById('calendar-month-year').innerText = `${monthNames[month]} ${year}`;
-
-      const firstDay = new Date(year, month, 1).getDay();
-      const totalDays = new Date(year, month + 1, 0).getDate();
-
-      const daysGrid = document.getElementById('calendar-days-grid');
-      daysGrid.innerHTML = '';
-
-      for (let i = 0; i < firstDay; i++) {
-        daysGrid.innerHTML += `<div class="h-16 rounded-xl bg-slate-900/30"></div>`;
-      }
-
-      const todayStr = formatDateKey(new Date());
-
-      for (let day = 1; day <= totalDays; day++) {
-        const dateObj = new Date(year, month, day);
-        const dateStr = formatDateKey(dateObj);
-        const isSelected = dateStr === selectedDateStr;
-        const isToday = dateStr === todayStr;
-        const hasLogs = logs[dateStr] && logs[dateStr].events.length > 0;
-
-        daysGrid.innerHTML += `
-          <button onclick="selectDate('${dateStr}')" class="h-16 rounded-xl p-2 flex flex-col justify-between text-left transition-all border ${
-            isSelected 
-              ? 'bg-indigo-600/20 border-indigo-500 text-white font-bold shadow-lg' 
-              : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700 text-slate-300'
-          } ${isToday ? 'ring-1 ring-indigo-400' : ''}">
-            <div class="flex justify-between items-center w-full">
-              <span class="text-xs ${isToday ? 'text-indigo-400 font-bold' : ''}">${day}</span>
-              ${hasLogs ? `<span class="w-2 h-2 rounded-full bg-emerald-400"></span>` : ''}
-            </div>
-          </button>
-        `;
-      }
-
-      const parts = selectedDateStr.split('-');
-      const formattedDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-      document.getElementById('selected-date-display').innerText = formattedDateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-    }
-
-    function selectDate(dateStr) {
-      selectedDateStr = dateStr;
-      renderCalendar();
-      renderShiftControls();
-    }
-
-    function changeMonth(delta) {
-      currentDate.setMonth(currentDate.getMonth() + delta);
-      renderCalendar();
-    }
-
-    function openSummaryModal() {
-      const modal = document.getElementById('summary-modal');
-      const content = document.getElementById('summary-content');
-      const dayLog = logs[selectedDateStr] || { events: [] };
-
-      const activeTasks = tasks.filter(t => t.timeSpent > 0);
-
-      let summaryText = `======================================\n`;
-      summaryText += ` RESUMO DE JORNADA - ${selectedDateStr}\n`;
-      summaryText += `======================================\n\n`;
-
-      summaryText += `LOGS DE PONTO:\n`;
-      dayLog.events.forEach(e => {
-        summaryText += ` - [${e.time}] ${e.label}\n`;
-      });
-
-      summaryText += `\nDEMANDAS ATUADAS:\n`;
-      activeTasks.forEach(t => {
-        const h = Math.floor(t.timeSpent / 3600);
-        const m = Math.floor((t.timeSpent % 3600) / 60);
-        summaryText += ` • ${t.title}: ${h}h ${m}m (${t.status.toUpperCase()})\n`;
-      });
-
-      content.innerText = summaryText;
-      modal.classList.remove('hidden');
-    }
-
-    function closeModal() {
-      document.getElementById('summary-modal').classList.add('hidden');
-    }
-
-    function copySummary() {
-      const text = document.getElementById('summary-content').innerText;
-      navigator.clipboard.writeText(text);
-      alert('Resumo copiado com sucesso!');
-    }
-
-    function handleAddTask(e) {
-      e.preventDefault();
-      const titleInput = document.getElementById('input-title');
-      const title = titleInput.value.trim();
-      const priority = document.getElementById('input-priority').value;
-      const estHours = parseFloat(document.getElementById('input-est').value);
-
-      if (!title) return;
-
-      tasks.push({
-        id: Date.now().toString(),
-        title: title,
-        status: 'todo',
-        priority: priority,
-        timeSpent: 0,
-        estimated: estHours * 3600
-      });
-
-      titleInput.value = '';
-      saveAll();
-    }
-
-    function changeStatus(id, newStatus) {
-      const task = tasks.find(t => t.id === id);
-      if (task) task.status = newStatus;
-      saveAll();
-    }
-
-    function deleteTask(id) {
-      tasks = tasks.filter(t => t.id !== id);
-      saveAll();
-    }
-
-    function renderKanban() {
-      const todoCol = document.getElementById('col-todo');
-      const inProgressCol = document.getElementById('col-in-progress');
-      const doneCol = document.getElementById('col-done');
-
-      const renderCard = (task) => `
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm hover:border-slate-700 transition-all">
-          <div class="flex justify-between items-start mb-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-              task.priority === 'high' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-800 text-slate-300 border-slate-700'
-            }">${task.priority}</span>
-            <button onclick="deleteTask('${task.id}')" class="text-slate-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-          </div>
-          <h4 class="font-medium text-sm text-slate-100 mb-3">${escapeHTML(task.title)}</h4>
-          <div class="flex items-center justify-between pt-2 border-t border-slate-800">
-            <select onchange="changeStatus('${task.id}', this.value)" class="bg-slate-950 border border-slate-800 text-xs rounded px-2 py-1 text-slate-300">
-              <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>A Fazer</option>
-              <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>Em Progresso</option>
-              <option value="done" ${task.status === 'done' ? 'selected' : ''}>Concluído</option>
-            </select>
-          </div>
-        </div>
-      `;
-
-      todoCol.innerHTML = tasks.filter(t => t.status === 'todo').map(renderCard).join('');
-      inProgressCol.innerHTML = tasks.filter(t => t.status === 'in-progress').map(renderCard).join('');
-      doneCol.innerHTML = tasks.filter(t => t.status === 'done').map(renderCard).join('');
-
-      document.getElementById('count-todo').innerText = tasks.filter(t => t.status === 'todo').length;
-      document.getElementById('count-in-progress').innerText = tasks.filter(t => t.status === 'in-progress').length;
-      document.getElementById('count-done').innerText = tasks.filter(t => t.status === 'done').length;
-    }
-
-    function exportData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ tasks, logs }, null, 2));
-      const anchor = document.createElement('a');
-      anchor.setAttribute("href", dataStr);
-      anchor.setAttribute("download", `pulsetask_enterprise_${selectedDateStr}.json`);
-      anchor.click();
-    }
-
-    function render() {
-      renderCalendar();
-      renderShiftControls();
-      renderKanban();
-      if (window.lucide) window.lucide.createIcons();
-    }
-
-    render();
-  </script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
