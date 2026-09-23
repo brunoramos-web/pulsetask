@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PulseTask | Enterprise Suite v3.0</title>
+  <title>PulseTask | Enterprise Suite v3.0 Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
@@ -34,20 +34,20 @@
   </script>
   <style>
     .glass-panel {
-      background: rgba(15, 23, 42, 0.65);
+      background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .glass-card {
-      background: rgba(30, 41, 59, 0.5);
+      background: rgba(30, 41, 59, 0.6);
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .glass-card:hover {
-      background: rgba(30, 41, 59, 0.8);
-      border-color: rgba(99, 102, 241, 0.3);
+      background: rgba(30, 41, 59, 0.85);
+      border-color: rgba(99, 102, 241, 0.4);
       transform: translateY(-2px);
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
@@ -237,6 +237,368 @@
 
   </div>
 
-  <script src="assets/js/app.js"></script>
+  <script>
+    const STORAGE_KEY_TASKS = 'pulsetask_tasks_v3';
+    const STORAGE_KEY_LOGS = 'pulsetask_logs_v3';
+
+    let currentDate = new Date();
+    let selectedDateStr = formatDateKey(new Date());
+
+    function formatDateKey(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    function loadStorage(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (e) { return fallback; }
+    }
+
+    function saveStorage(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    }
+
+    let tasks = loadStorage(STORAGE_KEY_TASKS, [
+      { 
+        id: '1', title: 'Refatoração da Arquitetura do Piloto', status: 'done', priority: 'high', 
+        stageTimestamps: { todo: '08:30', 'in-progress': '09:00', done: '10:15' }
+      },
+      { 
+        id: '2', title: 'Ajuste de Hierarquia e Transições UI', status: 'in-progress', priority: 'high', 
+        stageTimestamps: { todo: '09:00', 'in-progress': '10:20' }
+      }
+    ]);
+
+    let logs = loadStorage(STORAGE_KEY_LOGS, {});
+
+    function saveAll() {
+      saveStorage(STORAGE_KEY_TASKS, tasks);
+      saveStorage(STORAGE_KEY_LOGS, logs);
+      render();
+    }
+
+    function switchView(view) {
+      const calView = document.getElementById('view-calendar');
+      const kanView = document.getElementById('view-kanban');
+      const btnCal = document.getElementById('tab-calendar');
+      const btnKan = document.getElementById('tab-kanban');
+
+      if (view === 'calendar') {
+        calView.classList.remove('hidden');
+        kanView.classList.add('hidden');
+        btnCal.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-brand-600 text-white shadow-md shadow-brand-600/20";
+        btnKan.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50";
+      } else {
+        calView.classList.add('hidden');
+        kanView.classList.remove('hidden');
+        btnKan.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 bg-brand-600 text-white shadow-md shadow-brand-600/20";
+        btnCal.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50";
+      }
+    }
+
+    function addLogEntry(label) {
+      if (!logs[selectedDateStr]) {
+        logs[selectedDateStr] = { status: 'idle', events: [] };
+      }
+      const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      logs[selectedDateStr].events.push({ time: nowTime, label: label });
+    }
+
+    function handleShiftAction(action) {
+      if (!logs[selectedDateStr]) logs[selectedDateStr] = { status: 'idle', events: [] };
+      const dayLog = logs[selectedDateStr];
+
+      if (action === 'start') {
+        dayLog.status = 'working';
+        addLogEntry('Início da Jornada de Trabalho');
+      } else if (action === 'pause') {
+        dayLog.status = 'paused';
+        addLogEntry('Pausa / Horário de Almoço');
+      } else if (action === 'resume') {
+        dayLog.status = 'working';
+        addLogEntry('Retorno da Pausa');
+      } else if (action === 'end') {
+        dayLog.status = 'ended';
+        addLogEntry('Encerramento do Dia');
+        openSummaryModal();
+      }
+      saveAll();
+    }
+
+    function renderShiftControls() {
+      const dayLog = logs[selectedDateStr] || { status: 'idle', events: [] };
+      const btnStart = document.getElementById('btn-start-day');
+      const btnPause = document.getElementById('btn-pause-day');
+      const btnResume = document.getElementById('btn-resume-day');
+      const btnEnd = document.getElementById('btn-end-day');
+      const badge = document.getElementById('shift-badge');
+
+      btnStart.classList.add('hidden');
+      btnPause.classList.add('hidden');
+      btnResume.classList.add('hidden');
+      btnEnd.classList.add('hidden');
+
+      if (dayLog.status === 'idle') {
+        btnStart.classList.remove('hidden');
+        badge.innerText = 'Dia Não Iniciado';
+        badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-slate-800 text-slate-400 border border-slate-700/80';
+      } else if (dayLog.status === 'working') {
+        btnPause.classList.remove('hidden');
+        btnEnd.classList.remove('hidden');
+        badge.innerText = 'Em Expansão / Trabalhando';
+        badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      } else if (dayLog.status === 'paused') {
+        btnResume.classList.remove('hidden');
+        btnEnd.classList.remove('hidden');
+        badge.innerText = 'Em Pausa (Almoço)';
+        badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      } else if (dayLog.status === 'ended') {
+        badge.innerText = 'Jornada Encerrada';
+        badge.className = 'text-xs px-3 py-1 rounded-full font-medium bg-brand-500/10 text-brand-400 border border-brand-500/20';
+      }
+
+      const timelineEl = document.getElementById('daily-log-timeline');
+      if (dayLog.events.length === 0) {
+        timelineEl.innerHTML = `<p class="text-xs text-slate-500 py-6 text-center">Nenhum evento no log hoje.</p>`;
+      } else {
+        timelineEl.innerHTML = dayLog.events.map(ev => `
+          <div class="flex items-center space-x-3 text-xs p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/80">
+            <span class="font-mono text-slate-400 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">${ev.time}</span>
+            <span class="text-slate-200 font-medium">${escapeHTML(ev.label)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function changeStatus(id, newStatus) {
+      const task = tasks.find(t => t.id === id);
+      if (!task || task.status === newStatus) return;
+
+      const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      if (!task.stageTimestamps) task.stageTimestamps = {};
+      task.stageTimestamps[newStatus] = nowTime;
+      task.status = newStatus;
+
+      const labels = {
+        'in-progress': `Iniciada Demanda: "${task.title}"`,
+        'done': `Concluída Demanda: "${task.title}"`,
+        'todo': `Retornou a A Fazer: "${task.title}"`
+      };
+      
+      addLogEntry(labels[newStatus]);
+      saveAll();
+    }
+
+    function handleAddTask(e) {
+      e.preventDefault();
+      const titleInput = document.getElementById('input-title');
+      const title = titleInput.value.trim();
+      const priority = document.getElementById('input-priority').value;
+      const nowTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      if (!title) return;
+
+      tasks.push({
+        id: Date.now().toString(),
+        title: title,
+        status: 'todo',
+        priority: priority,
+        stageTimestamps: { todo: nowTime }
+      });
+
+      addLogEntry(`Criada Nova Demanda: "${title}" (${priority.toUpperCase()})`);
+      titleInput.value = '';
+      saveAll();
+    }
+
+    function deleteTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (task) addLogEntry(`Removida Demanda: "${task.title}"`);
+      tasks = tasks.filter(t => t.id !== id);
+      saveAll();
+    }
+
+    function renderKanban() {
+      const priorityWeight = { high: 3, medium: 2, low: 1 };
+      
+      const sortedTasks = [...tasks].sort((a, b) => {
+        return priorityWeight[b.priority] - priorityWeight[a.priority];
+      });
+
+      const todoCol = document.getElementById('col-todo');
+      const inProgressCol = document.getElementById('col-in-progress');
+      const doneCol = document.getElementById('col-done');
+
+      const renderCard = (task) => {
+        const priorityBadges = {
+          high: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+          medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+          low: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+        };
+
+        const ts = task.stageTimestamps || {};
+        
+        return `
+          <div class="glass-card rounded-2xl p-4 shadow-sm relative group animate-card-enter">
+            <div class="flex justify-between items-center mb-2.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${priorityBadges[task.priority]}">
+                ${task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Média' : 'Baixa'}
+              </span>
+              <button onclick="deleteTask('${task.id}')" class="text-slate-500 hover:text-rose-400 transition-colors p-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <h4 class="font-semibold text-sm text-slate-100 mb-3 leading-snug">${escapeHTML(task.title)}</h4>
+
+            <div class="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80 mb-3 space-y-1 font-mono">
+              ${ts.todo ? `<div class="flex justify-between"><span>A Fazer:</span><span class="text-slate-300">${ts.todo}</span></div>` : ''}
+              ${ts['in-progress'] ? `<div class="flex justify-between"><span>Em Progresso:</span><span class="text-indigo-400">${ts['in-progress']}</span></div>` : ''}
+              ${ts.done ? `<div class="flex justify-between"><span>Concluído:</span><span class="text-emerald-400">${ts.done}</span></div>` : ''}
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+              <span class="text-[10px] text-slate-500 font-medium">Mover etapa:</span>
+              <select onchange="changeStatus('${task.id}', this.value)" class="bg-slate-950 border border-slate-800 text-xs rounded-xl px-2.5 py-1 text-slate-300 focus:outline-none focus:border-brand-500">
+                <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>A Fazer</option>
+                <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>Em Progresso</option>
+                <option value="done" ${task.status === 'done' ? 'selected' : ''}>Concluído</option>
+              </select>
+            </div>
+          </div>
+        `;
+      };
+
+      todoCol.innerHTML = sortedTasks.filter(t => t.status === 'todo').map(renderCard).join('');
+      inProgressCol.innerHTML = sortedTasks.filter(t => t.status === 'in-progress').map(renderCard).join('');
+      doneCol.innerHTML = sortedTasks.filter(t => t.status === 'done').map(renderCard).join('');
+
+      document.getElementById('count-todo').innerText = tasks.filter(t => t.status === 'todo').length;
+      document.getElementById('count-in-progress').innerText = tasks.filter(t => t.status === 'in-progress').length;
+      document.getElementById('count-done').innerText = tasks.filter(t => t.status === 'done').length;
+    }
+
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      document.getElementById('calendar-month-year').innerText = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const totalDays = new Date(year, month + 1, 0).getDate();
+
+      const daysGrid = document.getElementById('calendar-days-grid');
+      daysGrid.innerHTML = '';
+
+      for (let i = 0; i < firstDay; i++) {
+        daysGrid.innerHTML += `<div class="h-16 rounded-2xl bg-slate-900/20"></div>`;
+      }
+
+      const todayStr = formatDateKey(new Date());
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dateObj = new Date(year, month, day);
+        const dateStr = formatDateKey(dateObj);
+        const isSelected = dateStr === selectedDateStr;
+        const isToday = dateStr === todayStr;
+        const hasLogs = logs[dateStr] && logs[dateStr].events.length > 0;
+
+        daysGrid.innerHTML += `
+          <button onclick="selectDate('${dateStr}')" class="h-16 rounded-2xl p-2.5 flex flex-col justify-between text-left transition-all border ${
+            isSelected 
+              ? 'bg-brand-600/20 border-brand-500 text-white font-bold shadow-lg shadow-brand-600/10' 
+              : 'bg-slate-900/40 border-slate-800/80 hover:border-slate-700 text-slate-300'
+          } ${isToday ? 'ring-1 ring-brand-400' : ''}">
+            <div class="flex justify-between items-center w-full">
+              <span class="text-xs ${isToday ? 'text-brand-400 font-bold' : ''}">${day}</span>
+              ${hasLogs ? `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>` : ''}
+            </div>
+          </button>
+        `;
+      }
+
+      const parts = selectedDateStr.split('-');
+      const formattedDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+      document.getElementById('selected-date-display').innerText = formattedDateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    function selectDate(dateStr) {
+      selectedDateStr = dateStr;
+      renderCalendar();
+      renderShiftControls();
+    }
+
+    function changeMonth(delta) {
+      currentDate.setMonth(currentDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function openSummaryModal() {
+      const modal = document.getElementById('summary-modal');
+      const content = document.getElementById('summary-content');
+      const dayLog = logs[selectedDateStr] || { events: [] };
+
+      let summaryText = `=================================================\n`;
+      summaryText += ` RESUMO EXECUTIVO DE JORNADA - ${selectedDateStr}\n`;
+      summaryText += `=================================================\n\n`;
+
+      summaryText += `MARCOS DO PONTO / TIMELINE:\n`;
+      dayLog.events.forEach(e => {
+        summaryText += `  [${e.time}] ${e.label}\n`;
+      });
+
+      summaryText += `\nDEMANDAS & ROTINAS EXECUTADAS:\n`;
+      tasks.forEach(t => {
+        const ts = t.stageTimestamps || {};
+        summaryText += ` • ${t.title} [${t.priority.toUpperCase()}]\n`;
+        summaryText += `   Status: ${t.status.toUpperCase()}\n`;
+        if (ts.todo) summaryText += `   - Criado em: ${ts.todo}\n`;
+        if (ts['in-progress']) summaryText += `   - Iniciado em: ${ts['in-progress']}\n`;
+        if (ts.done) summaryText += `   - Concluído em: ${ts.done}\n`;
+        summaryText += `\n`;
+      });
+
+      content.innerText = summaryText;
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('summary-modal').classList.add('hidden');
+    }
+
+    function copySummary() {
+      const text = document.getElementById('summary-content').innerText;
+      navigator.clipboard.writeText(text);
+      alert('Resumo copiado para a área de transferência!');
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ tasks, logs }, null, 2));
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `pulsetask_v3_${selectedDateStr}.json`);
+      anchor.click();
+    }
+
+    function render() {
+      renderCalendar();
+      renderShiftControls();
+      renderKanban();
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Inicialização direta
+    render();
+  </script>
 </body>
 </html>
