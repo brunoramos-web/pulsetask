@@ -248,7 +248,6 @@
   </div>
 
   <script>
-    // Usa prioritariamente a chave v3 anterior para garantir retrocompatibilidade total dos dados criados
     const STORAGE_KEY_TASKS = 'pulsetask_tasks_v3';
     const STORAGE_KEY_LOGS = 'pulsetask_logs_v3';
 
@@ -274,7 +273,6 @@
       return `${h}:${m}:${s}`;
     }
 
-    // Carregamento Inteligente: Tenta v31, se não achar, carrega v3 ou fallback inicial
     function loadStorage(key, fallback) {
       try {
         const item = localStorage.getItem(key) || localStorage.getItem(key.replace('_v3', '_v31'));
@@ -283,13 +281,26 @@
     }
 
     function saveStorage(key, value) {
-      try { 
-        localStorage.setItem(key, JSON.stringify(value));
-      } catch (e) {}
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
     }
 
     let tasks = loadStorage(STORAGE_KEY_TASKS, []);
     let logs = loadStorage(STORAGE_KEY_LOGS, {});
+
+    // Inicializa campos de tempo caso ainda não existam no armazenamento
+    tasks.forEach(t => {
+      if (t.timeInSeconds === undefined) t.timeInSeconds = 0;
+      if (t.status === 'in-progress' && !t.inProgressStartEpoch) {
+        t.inProgressStartEpoch = Date.now();
+      }
+    });
+
+    if (logs[selectedDateStr]) {
+      if (logs[selectedDateStr].activeWorkedSeconds === undefined) logs[selectedDateStr].activeWorkedSeconds = 0;
+      if (logs[selectedDateStr].status === 'working' && !logs[selectedDateStr].lastStartEpoch) {
+        logs[selectedDateStr].lastStartEpoch = Date.now();
+      }
+    }
 
     function saveAll() {
       saveStorage(STORAGE_KEY_TASKS, tasks);
@@ -485,7 +496,11 @@
         };
 
         const ts = task.stageTimestamps || {};
-        
+        let currentCardSecs = task.timeInSeconds || 0;
+        if (task.status === 'in-progress' && task.inProgressStartEpoch) {
+          currentCardSecs += Math.floor((Date.now() - task.inProgressStartEpoch) / 1000);
+        }
+
         return `
           <div class="glass-card rounded-2xl p-4 shadow-sm relative group animate-card-enter">
             <div class="flex justify-between items-center mb-2.5">
@@ -501,8 +516,8 @@
 
             <div class="mb-3 p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
               <span class="text-[10px] text-slate-400 font-medium">Tempo Acumulado:</span>
-              <span id="card-timer-${task.id}" class="text-xs font-mono font-bold ${task.status === 'in-progress' ? 'text-indigo-400' : 'text-slate-300'}">
-                ${formatSecondsToHMS(task.timeInSeconds || 0)}
+              <span id="card-timer-${task.id}" class="text-xs font-mono font-bold ${task.status === 'in-progress' ? 'text-indigo-400 animate-pulse' : 'text-slate-300'}">
+                ${formatSecondsToHMS(currentCardSecs)}
               </span>
             </div>
 
@@ -647,19 +662,28 @@
       anchor.click();
     }
 
-    // Ticker ativo em tempo real
+    // Ticker global continuo de 1 segundo
     setInterval(() => {
+      // 1. Relógio da Jornada Diária
       const dayLog = logs[selectedDateStr];
-      if (dayLog && dayLog.status === 'working' && dayLog.lastStartEpoch) {
+      if (dayLog && dayLog.status === 'working') {
+        if (!dayLog.lastStartEpoch) dayLog.lastStartEpoch = Date.now();
         const currentTotal = (dayLog.activeWorkedSeconds || 0) + Math.floor((Date.now() - dayLog.lastStartEpoch) / 1000);
         const timerEl = document.querySelector('#live-shift-timer span');
         if (timerEl) timerEl.innerText = formatSecondsToHMS(currentTotal);
+      } else if (dayLog) {
+        const timerEl = document.querySelector('#live-shift-timer span');
+        if (timerEl) timerEl.innerText = formatSecondsToHMS(dayLog.activeWorkedSeconds || 0);
       }
 
-      tasks.filter(t => t.status === 'in-progress' && t.inProgressStartEpoch).forEach(t => {
-        const currentCardSecs = (t.timeInSeconds || 0) + Math.floor((Date.now() - t.inProgressStartEpoch) / 1000);
-        const cardTimerEl = document.getElementById(`card-timer-${t.id}`);
-        if (cardTimerEl) cardTimerEl.innerText = formatSecondsToHMS(currentCardSecs);
+      // 2. Relógio de cada Card "Em Progresso"
+      tasks.forEach(t => {
+        if (t.status === 'in-progress') {
+          if (!t.inProgressStartEpoch) t.inProgressStartEpoch = Date.now();
+          const currentCardSecs = (t.timeInSeconds || 0) + Math.floor((Date.now() - t.inProgressStartEpoch) / 1000);
+          const cardTimerEl = document.getElementById(`card-timer-${t.id}`);
+          if (cardTimerEl) cardTimerEl.innerText = formatSecondsToHMS(currentCardSecs);
+        }
       });
     }, 1000);
 
